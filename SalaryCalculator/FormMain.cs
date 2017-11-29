@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SalaryCalculator
@@ -16,119 +9,200 @@ namespace SalaryCalculator
         
         public FormMain()
         {
+            
             InitializeComponent();
             // making texbox for author income invisible
             textBoxAuthorIncome.Visible = (checkBoxAuthorIncome.CheckState == CheckState.Checked);
-            textBoxAuthorIncome2.Visible = (checkBoxAuthorIncome2.CheckState == CheckState.Checked);
+            textBoxAuthorIncome2.Visible = (CheckBoxAuthorIncome2.CheckState == CheckState.Checked);
         }
 
         private void buttonCountOnHands_Click(object sender, EventArgs e)
         {
-            // getting values from textboxs
-            var numberOfChildrens = Convert.ToInt32(textBoxNmbOfChildrens.Text);
-            var salaryOnPaper = Convert.ToDouble(textBoxSalaryOnPapper.Text);
-            var authorIncome = Convert.ToDouble(textBoxAuthorIncome.Text);
-           
-            // counting and show results to labels on tab1
-            TaxSettings tax = new TaxSettings();
+            // counting for tab1 salary on paper
+            // getting values from user
+            if (!Int32.TryParse(textBoxNmbOfChildrens.Text, out int numberOfChildrens))
+            {
+                MessageBox.Show("Prašome įvesti tik sveikus skaičius!");
+                return;
+            }
             
-            var npd1 = 310 - (0.5 * (salaryOnPaper - 380));
-            // npd is 0 if salary on paper is >1000
-            labelNpd.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelPnpd.Text = (tax.Pnpd * numberOfChildrens).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelIncomeTax.Text = ((salaryOnPaper-(tax.Pnpd*numberOfChildrens))*tax.IncomeTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelHealthInsurance.Text =(salaryOnPaper *tax.HealthInsuranceTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelSocialInsurance.Text = (salaryOnPaper*tax.SocialInsuranceTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelAuthorTax.Text =(authorIncome-(authorIncome*tax.AuthorIncomeTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelSodraTax.Text = (salaryOnPaper *tax.SodraTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelOnPaperSalary.Text = salaryOnPaper.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelOnHandSalary.Text = ((salaryOnPaper - ((salaryOnPaper - (tax.Pnpd * numberOfChildrens)) * tax.IncomeTax)) - (salaryOnPaper * tax.HealthInsuranceTax) - (salaryOnPaper * tax.SocialInsuranceTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelWorkPlacePrice.Text = (salaryOnPaper + (salaryOnPaper * tax.SodraTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-
-            // because income tax depends on npd and pnpd need to count seperately
-            if (salaryOnPaper<=310)
+            if (!double.TryParse(textBoxSalaryOnPapper.Text, out double salaryOnPaper))
             {
-                labelNpd.Text = tax.Npd.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                labelIncomeTax.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-               
-                // if Pnpd more than salary on paper than income tax is 0.00
-                if (tax.Pnpd*numberOfChildrens>salaryOnPaper- tax.Npd)
+                MessageBox.Show("Prašome įvesti tik skaičius!");
+                return;
+            }
+            if (!double.TryParse(textBoxAuthorIncome.Text, out double authorIncome))
+            {
+                MessageBox.Show("Prašome įvesti tik skaičius!");
+                return;
+            }
+
+            
+            CultureInfo cultureInfo = CultureInfo.CreateSpecificCulture("lt-LT"); // for currency string formatting 
+            TaxSettings tax = new TaxSettings(); //  values from settings
+            
+            double npd=0;
+            double incomeTax = 0;
+            var pnpd = tax.Pnpd * numberOfChildrens;
+            if (radioButtonAlone.Checked)
+            {
+                pnpd = pnpd * 2;
+            }
+            // income tax  npd is different relating to salary
+            if (salaryOnPaper <= tax.MinimumWage)
+            {
+                npd =tax.Npd;
+                labelIncomeTax.Text = incomeTax.ToString("C", cultureInfo);
+                if (salaryOnPaper>tax.Npd&&salaryOnPaper<=tax.MinimumWage)
                 {
-                    labelIncomeTax.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                    labelOnHandSalary.Text = (salaryOnPaper - (salaryOnPaper * tax.HealthInsuranceTax) - (salaryOnPaper * tax.SocialInsuranceTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
+                    npd = tax.Npd ;
+                    labelIncomeTax.Text = ((salaryOnPaper-npd) * tax.IncomeTax).ToString("C",cultureInfo);
+                    if (numberOfChildrens>0)
+                    {
+                        labelIncomeTax.Text = ((salaryOnPaper - tax.Npd - pnpd) * tax.IncomeTax).ToString("C", cultureInfo);
+
+                    }
                 }
             }
-            // if salary on paper is >310 and <1000
-            if (salaryOnPaper>310&&salaryOnPaper<1000)
+             if (salaryOnPaper > tax.MinimumWage)
             {
-                labelNpd.Text =npd1.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                var pnpd1 = tax.Pnpd * numberOfChildrens;
-                labelIncomeTax.Text = ((salaryOnPaper - tax.Pnpd*numberOfChildrens - npd1) * tax.IncomeTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                labelOnHandSalary.Text = ((salaryOnPaper-((salaryOnPaper - npd1 - pnpd1) * tax.IncomeTax)) - (salaryOnPaper * tax.HealthInsuranceTax) - (salaryOnPaper * tax.SocialInsuranceTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-
-                // check if pnpd is more than salary on paper
-                if (tax.Pnpd * numberOfChildrens > salaryOnPaper - tax.Npd)
+                npd = tax.Npd - (0.5 * (salaryOnPaper - tax.MinimumWage));
+                labelIncomeTax.Text = ((salaryOnPaper-npd) * tax.IncomeTax).ToString("C", cultureInfo);
+                if (numberOfChildrens > 0)
                 {
-                    labelIncomeTax.Text = "0.00";
+                    labelIncomeTax.Text = ((salaryOnPaper - tax.Npd - pnpd) * tax.IncomeTax).ToString("C", cultureInfo);
+                }
+                if (npd<0)
+                {
+                    npd = 0;
+                    labelIncomeTax.Text = ((salaryOnPaper - npd -pnpd) * tax.IncomeTax).ToString("C", cultureInfo);
                 }
             }
+            // counting and show results to labels on tab1
+
+            labelNpd.Text = npd.ToString("C",cultureInfo);
+
+            labelPnpd.Text = pnpd.ToString("C", cultureInfo);
+
+            labelHealthInsurance.Text =(salaryOnPaper *tax.HealthInsuranceTax).ToString("C", cultureInfo);
+
+            labelSocialInsurance.Text = (salaryOnPaper*tax.SocialInsuranceTax).ToString("C", cultureInfo);
+
+            labelAuthorTax.Text =(authorIncome-(authorIncome*tax.AuthorIncomeTax)).ToString("C", cultureInfo);
+
+            labelSodraTax.Text = (salaryOnPaper *tax.SodraTax).ToString("C", cultureInfo);
+
+            labelOnPaperSalary.Text = salaryOnPaper.ToString("C", cultureInfo);
+
+            labelWorkPlacePrice.Text = (salaryOnPaper + (salaryOnPaper * tax.SodraTax)).ToString("C", cultureInfo);
+
+            labelOnHandSalary.Text = ((salaryOnPaper - ((salaryOnPaper - pnpd-npd) * tax.IncomeTax)) -
+                                     (salaryOnPaper * tax.HealthInsuranceTax) -
+                                     (salaryOnPaper * tax.SocialInsuranceTax)).ToString("C", cultureInfo);
+                if (pnpd>salaryOnPaper - npd)
+                {
+                    labelIncomeTax.Text = incomeTax.ToString("C", cultureInfo);
+                    labelOnHandSalary.Text = (salaryOnPaper - (salaryOnPaper * tax.HealthInsuranceTax)- 
+                                             (salaryOnPaper * tax.SocialInsuranceTax)).ToString("C", cultureInfo);
+                }
         }
 
         private void buttonCountOnPapper_Click(object sender, EventArgs e)
         {
-            //getting values from textboxs
-            var numberOfChildrens2 = Convert.ToInt32(textBoxNmbOfChildrens2.Text);
-            var salaryOnHands = Convert.ToInt32(textBoxSalaryOnHands.Text);
-            var authorIncome2 = Convert.ToInt32(textBoxAuthorIncome2.Text);
            
-            TaxSettings tax = new TaxSettings();
-            var salaryOnPapper2 = salaryOnHands / (1 - (tax.IncomeTax + tax.HealthInsuranceTax + tax.SocialInsuranceTax));
-            var npd2 = 310 - (0.5 * (salaryOnPapper2 - 380));
-            //counting and show results to labels on tab2
-            labelNpd.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelPnpd2.Text = (tax.Pnpd * numberOfChildrens2).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelIncomeTax2.Text = ((salaryOnPapper2 - (tax.Pnpd * numberOfChildrens2)) * tax.IncomeTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelHealthInsurance2.Text = (salaryOnPapper2* tax.HealthInsuranceTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelSocialInsurance2.Text = (salaryOnPapper2 * tax.SocialInsuranceTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelAuthorTax2.Text = (authorIncome2 - (authorIncome2 * tax.AuthorIncomeTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelSodraTax2.Text = (salaryOnPapper2 * tax.SodraTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelOnPaperSalary2.Text = salaryOnPapper2.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelOnHandSalary2.Text = salaryOnHands.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-            labelWorkPlacePrice2.Text = (salaryOnPapper2 + (salaryOnPapper2 * tax.SodraTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-           
-            // because income tax depends on npd and pnpd need to count seperately
-            if (salaryOnPapper2 <= 310)
+            // getting values from user on tab2
+            if (!Int32.TryParse(textBoxNmbOfChildrens2.Text, out int numberOfChildrens2))
             {
-                labelNpd2.Text = tax.Npd.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                labelIncomeTax2.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                // if Pnpd more than salary on paper than income tax is 0.00
-                if (tax.Pnpd * numberOfChildrens2 > salaryOnPapper2 - tax.Npd)
-                {
-                    labelIncomeTax.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                    labelOnHandSalary2.Text = (salaryOnPapper2 - (salaryOnPapper2 * tax.HealthInsuranceTax) - (salaryOnPapper2 * tax.SocialInsuranceTax)).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                }
+                MessageBox.Show("Prašome įvesti tik  sveikus skaičius!");
+                return;
             }
-            // if salary on paper is >310 and <1000
-            if (salaryOnPapper2> 310 && salaryOnPapper2< 1000)
+            if (!double.TryParse(textBoxSalaryOnHands.Text, out double salaryOnHands2))
             {
-                labelNpd2.Text = npd2.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                labelIncomeTax2.Text = ((salaryOnPapper2 - tax.Pnpd * numberOfChildrens2 - npd2) * tax.IncomeTax).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
-                // check if pnpd is more than salary on paper
-                if (tax.Pnpd * numberOfChildrens2 > salaryOnPapper2 - tax.Npd)
+                MessageBox.Show("Prašome įvesti tik  skaičius!");
+                return;
+            }
+            if (!double.TryParse(textBoxAuthorIncome2.Text, out double authorIncome2))
+            {
+                MessageBox.Show("Prašome įvesti tik  skaičius!");
+                return;
+            }
+
+            
+            CultureInfo cultureInfo = CultureInfo.CreateSpecificCulture("lt-LT"); // for currency string formatting 
+
+            TaxSettings tax = new TaxSettings();
+            // counting for tab2 salary on hands
+            double npd2 = 0;
+            double incomeTax =0;
+            double salaryOnPaper2 = 0;
+            var pnpd2 = tax.Pnpd * numberOfChildrens2;
+            if (radioButtonAlone2.Checked)
+            {
+                pnpd2 = pnpd2 * 2;
+            }
+            salaryOnPaper2 = salaryOnHands2 / (1 - (tax.IncomeTax + tax.HealthInsuranceTax + tax.SocialInsuranceTax));
+
+            var firstCondition = tax.MinimumWage * (1 - tax.HealthInsuranceTax - tax.SocialInsuranceTax) - (tax.MinimumWage - tax.Npd - pnpd2) * tax.IncomeTax;
+
+            if (salaryOnHands2 <= firstCondition)
+            {
+                salaryOnPaper2 = (salaryOnHands2 - tax.IncomeTax * tax.Npd - tax.IncomeTax * pnpd2) / (1 - tax.SocialInsuranceTax - tax.HealthInsuranceTax - tax.IncomeTax);
+                labelOnPaperSalary2.Text = salaryOnPaper2.ToString();
+                labelIncomeTax.Text = incomeTax.ToString("C", cultureInfo);
+
+                if ((tax.MinimumWage - tax.Npd - pnpd2)<=0||salaryOnHands2<=tax.Npd)
                 {
-                    labelIncomeTax.Text = 0.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"));
+                    salaryOnPaper2 = salaryOnHands2 / (1 - tax.SocialInsuranceTax - tax.HealthInsuranceTax);
+                    labelOnPaperSalary2.Text = salaryOnPaper2.ToString();
                 }
             }
 
+            if (salaryOnPaper2 > tax.Npd && salaryOnPaper2 <= tax.MinimumWage)
+            {
+                labelIncomeTax2.Text = ((salaryOnPaper2 - tax.Npd) * tax.IncomeTax).ToString("C", cultureInfo);
+                npd2 = tax.Npd;
+                if (numberOfChildrens2 > 0)
+                {
+                    labelIncomeTax2.Text = ((salaryOnPaper2 - tax.Npd - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                }
+            }
+            
+            if (salaryOnPaper2 > tax.MinimumWage)
+            {
+                npd2 = tax.Npd - (0.5 * (salaryOnPaper2 - tax.MinimumWage));
+                labelIncomeTax2.Text = ((salaryOnPaper2 - npd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                if (numberOfChildrens2 > 0)
+                {
+                    labelIncomeTax2.Text = ((salaryOnPaper2 - tax.Npd - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                }
+                if (npd2 < 0)
+                {
+                    npd2 = 0;
+                    labelIncomeTax2.Text = ((salaryOnPaper2 - npd2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                }
+            }
+            //show results to labels on tab2
+
+            labelNpd2.Text = npd2.ToString("C", cultureInfo);
+
+            labelPnpd2.Text = pnpd2.ToString("C", cultureInfo);
+
+            labelHealthInsurance2.Text = (salaryOnPaper2 * tax.HealthInsuranceTax).ToString("C", cultureInfo);
+
+            labelSocialInsurance2.Text = (salaryOnPaper2 * tax.SocialInsuranceTax).ToString("C", cultureInfo);
+
+            labelAuthorTax2.Text = (authorIncome2/ (1-tax.AuthorIncomeTax)).ToString("C", cultureInfo);
+
+            labelSodraTax2.Text = (salaryOnPaper2 * tax.SodraTax).ToString("C", cultureInfo);
+
+            labelOnPaperSalary2.Text = salaryOnPaper2.ToString("C", cultureInfo);
+
+            labelWorkPlacePrice2.Text = (salaryOnPaper2 + (salaryOnPaper2 * tax.SodraTax)).ToString("C", cultureInfo);
+
+            labelOnHandSalary2.Text = salaryOnHands2.ToString("C", cultureInfo);
         }
 
         private void buttonSettings_Click(object sender, EventArgs e)
-        {
-            var settings = new TaxSettings();
-            settings.ShowDialog();
-        }
-
-        private void button3_Click(object sender, EventArgs e)
         {
             var settings = new TaxSettings();
             settings.ShowDialog();
@@ -139,9 +213,9 @@ namespace SalaryCalculator
             textBoxAuthorIncome.Visible = (checkBoxAuthorIncome.CheckState == CheckState.Checked);
         }
 
-        private void checkBoxAuthorIncome2_CheckedChanged(object sender, EventArgs e)
+        private void CheckBoxAuthorIncome2_CheckedChanged(object sender, EventArgs e)
         {
-            textBoxAuthorIncome2.Visible = (checkBoxAuthorIncome2.CheckState == CheckState.Checked);
+            textBoxAuthorIncome2.Visible = (CheckBoxAuthorIncome2.CheckState == CheckState.Checked);
         }
     }
 }
