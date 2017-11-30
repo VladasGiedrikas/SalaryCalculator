@@ -60,7 +60,6 @@ namespace SalaryCalculator
                     if (numberOfChildrens>0)
                     {
                         labelIncomeTax.Text = ((salaryOnPaper - tax.Npd - pnpd) * tax.IncomeTax).ToString("C", cultureInfo);
-
                     }
                 }
             }
@@ -70,7 +69,7 @@ namespace SalaryCalculator
                 labelIncomeTax.Text = ((salaryOnPaper-npd) * tax.IncomeTax).ToString("C", cultureInfo);
                 if (numberOfChildrens > 0)
                 {
-                    labelIncomeTax.Text = ((salaryOnPaper - tax.Npd - pnpd) * tax.IncomeTax).ToString("C", cultureInfo);
+                    labelIncomeTax.Text = ((salaryOnPaper - npd - pnpd) * tax.IncomeTax).ToString("C", cultureInfo);
                 }
                 if (npd<0)
                 {
@@ -133,56 +132,62 @@ namespace SalaryCalculator
             TaxSettings tax = new TaxSettings();
             // counting for tab2 salary on hands
             double npd2 = 0;
-            double incomeTax =0;
             double salaryOnPaper2 = 0;
             var pnpd2 = tax.Pnpd * numberOfChildrens2;
             if (radioButtonAlone2.Checked)
             {
                 pnpd2 = pnpd2 * 2;
             }
-            salaryOnPaper2 = salaryOnHands2 / (1 - (tax.IncomeTax + tax.HealthInsuranceTax + tax.SocialInsuranceTax));
-
-            var firstCondition = tax.MinimumWage * (1 - tax.HealthInsuranceTax - tax.SocialInsuranceTax) - (tax.MinimumWage - tax.Npd - pnpd2) * tax.IncomeTax;
-
-            if (salaryOnHands2 <= firstCondition)
+            //on paper if not using npd
+            // with all taxes 
+            double taxesShort = (1 - (tax.IncomeTax + tax.HealthInsuranceTax + tax.SocialInsuranceTax));
+            salaryOnPaper2 = salaryOnHands2 / taxesShort;
+            labelIncomeTax2.Text = ((salaryOnPaper2 - npd2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+            
+            if (numberOfChildrens2>0)
             {
-                salaryOnPaper2 = (salaryOnHands2 - tax.IncomeTax * tax.Npd - tax.IncomeTax * pnpd2) / (1 - tax.SocialInsuranceTax - tax.HealthInsuranceTax - tax.IncomeTax);
-                labelOnPaperSalary2.Text = salaryOnPaper2.ToString();
-                labelIncomeTax.Text = incomeTax.ToString("C", cultureInfo);
-
-                if ((tax.MinimumWage - tax.Npd - pnpd2)<=0||salaryOnHands2<=tax.Npd)
+                double incomePnpd = (salaryOnPaper2 - pnpd2) * tax.IncomeTax;
+                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))) + incomePnpd;
+                labelIncomeTax2.Text = ((salaryOnPaper2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                if (salaryOnPaper2 - pnpd2 < 0)
                 {
-                    salaryOnPaper2 = salaryOnHands2 / (1 - tax.SocialInsuranceTax - tax.HealthInsuranceTax);
-                    labelOnPaperSalary2.Text = salaryOnPaper2.ToString();
-                }
-            }
-
-            if (salaryOnPaper2 > tax.Npd && salaryOnPaper2 <= tax.MinimumWage)
-            {
-                labelIncomeTax2.Text = ((salaryOnPaper2 - tax.Npd) * tax.IncomeTax).ToString("C", cultureInfo);
-                npd2 = tax.Npd;
-                if (numberOfChildrens2 > 0)
-                {
-                    labelIncomeTax2.Text = ((salaryOnPaper2 - tax.Npd - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
+                    labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
                 }
             }
             
-            if (salaryOnPaper2 > tax.MinimumWage)
+            //if on hands <600 >282.10 then using npd
+            if (salaryOnHands2<760&&salaryOnHands2> 282.10)
             {
+                salaryOnPaper2 = salaryOnHands2 / taxesShort;
                 npd2 = tax.Npd - (0.5 * (salaryOnPaper2 - tax.MinimumWage));
-                labelIncomeTax2.Text = ((salaryOnPaper2 - npd2) * tax.IncomeTax).ToString("C", cultureInfo);
-                if (numberOfChildrens2 > 0)
-                {
-                    labelIncomeTax2.Text = ((salaryOnPaper2 - tax.Npd - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
-                }
-                if (npd2 < 0)
-                {
-                    npd2 = 0;
-                    labelIncomeTax2.Text = ((salaryOnPaper2 - npd2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
-                }
-            }
-            //show results to labels on tab2
 
+                labelIncomeTax2.Text = ((salaryOnPaper2 - npd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)) + ((salaryOnPaper2 - pnpd2 - npd2) * tax.IncomeTax));
+
+                if (salaryOnPaper2-npd2<0||pnpd2+npd2>salaryOnPaper2)
+                {
+                    labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
+                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
+                }
+                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))) + (salaryOnPaper2-npd2)*tax.IncomeTax;
+                if (pnpd2+npd2<salaryOnPaper2&& pnpd2+npd2>0)
+                {
+                    labelIncomeTax2.Text = ((salaryOnPaper2-pnpd2 -npd2)*tax.IncomeTax).ToString("C", cultureInfo);
+                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))+ ((salaryOnPaper2 - pnpd2 - npd2) * tax.IncomeTax));
+                }
+
+                // jei maziau 282.10 netaikomas pajamu mokestis
+                // if on hands < 282.10 then no income tax
+                if (salaryOnHands2<282.10)
+                {
+                    labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
+                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
+                }
+
+            }
+
+            //show results to labels on tab2
             labelNpd2.Text = npd2.ToString("C", cultureInfo);
 
             labelPnpd2.Text = pnpd2.ToString("C", cultureInfo);
