@@ -141,50 +141,45 @@ namespace SalaryCalculator
             //on paper if not using npd
             // with all taxes 
             double taxesShort = (1 - (tax.IncomeTax + tax.HealthInsuranceTax + tax.SocialInsuranceTax));
-            salaryOnPaper2 = salaryOnHands2 / taxesShort;
-            labelIncomeTax2.Text = ((salaryOnPaper2 - npd2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
-            
-            if (numberOfChildrens2>0)
-            {
-                double incomePnpd = (salaryOnPaper2 - pnpd2) * tax.IncomeTax;
-                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))) + incomePnpd;
-                labelIncomeTax2.Text = ((salaryOnPaper2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
-                if (salaryOnPaper2 - pnpd2 < 0)
-                {
-                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
-                    labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
-                }
-            }
-            
-            //if on hands <600 >282.10 then using npd
-            if (salaryOnHands2<760&&salaryOnHands2> 282.10)
+            if (salaryOnHands2>760)
             {
                 salaryOnPaper2 = salaryOnHands2 / taxesShort;
+                labelIncomeTax2.Text = ((salaryOnPaper2 - npd2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+
+                if (numberOfChildrens2 > 0)
+                {
+                    double incomePnpd = (salaryOnPaper2 - pnpd2) * tax.IncomeTax;
+                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))) + incomePnpd;
+                    labelIncomeTax2.Text = ((salaryOnPaper2 - pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                    if (salaryOnPaper2 - pnpd2 < 0)
+                    {
+                        salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
+                        labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
+                    }
+                }
+            }
+            //if on hands <760 and >282.10 then using npd
+            if (salaryOnHands2<760 && salaryOnHands2> 282.10)
+            {
+                salaryOnPaper2 = (salaryOnHands2 - tax.IncomeTax * (tax.Npd + (0.5 * tax.MinimumWage) + pnpd2)) /
+                    (1 - tax.HealthInsuranceTax - tax.SocialInsuranceTax - (1.5 * tax.IncomeTax));
+
                 npd2 = tax.Npd - (0.5 * (salaryOnPaper2 - tax.MinimumWage));
 
-                labelIncomeTax2.Text = ((salaryOnPaper2 - npd2) * tax.IncomeTax).ToString("C", cultureInfo);
-                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)) + ((salaryOnPaper2 - pnpd2 - npd2) * tax.IncomeTax));
-
-                if (salaryOnPaper2-npd2<0||pnpd2+npd2>salaryOnPaper2)
+                labelIncomeTax2.Text = ((salaryOnPaper2 - npd2-pnpd2) * tax.IncomeTax).ToString("C", cultureInfo);
+                if (pnpd2+npd2>salaryOnPaper2)
                 {
                     labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
                     salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
                 }
-                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))) + (salaryOnPaper2-npd2)*tax.IncomeTax;
-                if (pnpd2+npd2<salaryOnPaper2&& pnpd2+npd2>0)
-                {
-                    labelIncomeTax2.Text = ((salaryOnPaper2-pnpd2 -npd2)*tax.IncomeTax).ToString("C", cultureInfo);
-                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax))+ ((salaryOnPaper2 - pnpd2 - npd2) * tax.IncomeTax));
-                }
-
-                // jei maziau 282.10 netaikomas pajamu mokestis
-                // if on hands < 282.10 then no income tax
-                if (salaryOnHands2<282.10)
-                {
-                    labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
-                    salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
-                }
-
+            }
+           
+            // if on hands < 282.10 then no income tax
+            if (salaryOnHands2 < 282.10)
+            {
+                labelIncomeTax2.Text = 0.ToString("C", cultureInfo);
+                salaryOnPaper2 = (salaryOnHands2 / (1 - (tax.HealthInsuranceTax + tax.SocialInsuranceTax)));
+                npd2 = tax.Npd;
             }
 
             //show results to labels on tab2
